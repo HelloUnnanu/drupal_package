@@ -1,0 +1,15 @@
+dir_ai_search:
+  version: 1.0
+  css:
+    theme:
+      css/dir_ai_search.css: {}
+  js:
+    js/dir_ai_search.js: {}
+  dependencies:
+    - core/drupal
+autocomplete:
+  version: 1.0
+  js:
+    js/ai-search-autocomplete.js: {}
+  dependencies:
+    - core/drupal

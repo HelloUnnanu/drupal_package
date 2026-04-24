@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for DIR AI Search module.
+ */
+
+/**
+ * Implements hook_page_attachments().
+ */
+function dir_ai_search_page_attachments(array &$attachments) {
+  // Attach the global autocomplete JS logic to all pages so the megamenu works.
+  $attachments['#attached']['library'][] = 'dir_ai_search/autocomplete';
+}
+
+/**
+ * Implements hook_theme().
+ */
+function dir_ai_search_theme($existing, $type, $theme, $path) {
+  return [
+    'dir_ai_search_app' => [
+      'variables' => [
+        'search_type' => 'content',
+      ],
+      'template' => 'dir-ai-search-app',
+    ],
+  ];
+}
+
+/**
+ * Implements hook_theme_suggestions_HOOK_alter() for page templates.
+ * 
+ * Forces our custom AI search routes to use the original DIR search results 
+ * page template so the header, footer, and search bar are perfectly preserved.
+ */
+function dir_ai_search_theme_suggestions_page_alter(array &$suggestions, array $variables) {
+  $route_name = \Drupal::routeMatch()->getRouteName();
+  if ($route_name === 'dir_ai_search.content' || $route_name === 'dir_ai_search.contracts') {
+    // This tells Drupal to use page--search-results.html.twig from the dir_bootstrap theme
+    $suggestions[] = 'page__search_results';
+  }
+}

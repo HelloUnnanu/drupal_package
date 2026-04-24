@@ -1,0 +1,15 @@
+dir_ai_search.content:
+  path: '/ai-search-content'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchController::buildContent'
+    _title: 'Search All Pages & Content'
+  requirements:
+    _permission: 'access content'
+
+dir_ai_search.contracts:
+  path: '/ai-search-contracts'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchController::buildContracts'
+    _title: 'Contracts & Vendors Results'
+  requirements:
+    _permission: 'access content'
