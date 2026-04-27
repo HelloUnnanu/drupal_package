@@ -20,10 +20,9 @@ GITHUB_OWNER="HelloUnnanu"
 GITHUB_REPO="drupal_package"
 MODULE_NAME="dir_ai_search"
 
-# Fine-grained PAT, read-only, scoped to this repo only.
-# Permissions: Contents: Read-only, Metadata: Read-only.
-# Rotate on the schedule documented in installer/RELEASE.md.
-GITHUB_PAT="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"
+# Repo is public — no auth needed for GitHub API tarball downloads.
+# If you ever flip this repo back to private, set a fine-grained read-only PAT here.
+GITHUB_PAT=""
 
 API_BASE="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}"
 
@@ -42,8 +41,8 @@ EXCLUDES=(
 
 # ---------- Colors ----------
 if [[ -t 1 ]]; then
-  C_RESET="\033[0m"; C_DIM="\033[2m"; C_BOLD="\033[1m"
-  C_RED="\033[31m"; C_GREEN="\033[32m"; C_YELLOW="\033[33m"; C_BLUE="\033[34m"
+  C_RESET=$'\033[0m'; C_DIM=$'\033[2m'; C_BOLD=$'\033[1m'
+  C_RED=$'\033[31m'; C_GREEN=$'\033[32m'; C_YELLOW=$'\033[33m'; C_BLUE=$'\033[34m'
 else
   C_RESET=""; C_DIM=""; C_BOLD=""; C_RED=""; C_GREEN=""; C_YELLOW=""; C_BLUE=""
 fi
@@ -147,10 +146,10 @@ resolve_target() {
 gh_curl() {
   local url="$1" out="$2"
   local headers=(-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+  # Auth is optional. Public repo → anonymous calls work (60 req/hr per IP).
+  # Private repo → set GITHUB_PAT above to a fine-grained read-only PAT.
   if [[ -n "$GITHUB_PAT" && "$GITHUB_PAT" != "__REPLACE_WITH_FINE_GRAINED_READONLY_PAT__" ]]; then
     headers+=(-H "Authorization: Bearer $GITHUB_PAT")
-  else
-    die "GITHUB_PAT is not set inside install.sh. Re-download install.sh from the private repo."
   fi
   curl -fsSL "${headers[@]}" -o "$out" "$url" \
     || die "GitHub API request failed: $url"
