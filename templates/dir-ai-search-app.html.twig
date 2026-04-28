@@ -1,0 +1,104 @@
+<div id="root">
+<div id="unnanu-ai-search-wrapper" class="unnanu-ai-search-wrapper mt-4 pb-4 w-full" data-search-type="{{ search_type }}">
+   <!-- Filters Pill row will be injected here -->
+   <div id="ai-search-filters-container"></div>
+
+   <!-- AI Search Grid Layout -->
+   <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(360px,0.95fr)] font-sans">
+       <!-- Results Column -->
+       <div class="min-w-0">
+           <div id="ai-search-results-container" class="bg-transparent">
+               <div id="ai-search-metadata" class="mb-4 text-sm text-gray-600 hidden"></div>
+               <div class="flex flex-col items-center justify-center gap-3 p-12" id="ai-search-loading">
+                   <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-t-2 border-[#1F40AF]"></div>
+                   <p class="text-sm text-gray-500 m-0">Fetching results, please wait…</p>
+               </div>
+               <div id="ai-search-results-list" class="space-y-4"></div>
+               <div id="ai-search-error" class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50"></div>
+           </div>
+       </div>
+
+       <!-- Chat / Preview Column -->
+       <aside class="min-w-0">
+           <div class="xl:sticky xl:top-[90px] xl:h-[calc(100vh-110px)] flex flex-col gap-3" id="ai-right-column">
+
+               <!-- FAQ / Suggested Questions Panel -->
+               <div id="ai-faq-container" class="hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-shrink-0 overflow-hidden flex-col">
+                   <button type="button" id="faq-toggle"
+                       class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 bg-white cursor-pointer border-0">
+                       <span class="text-sm font-semibold text-gray-800">Quick FAQ's</span>
+                       <svg id="faq-chevron" xmlns="http://www.w3.org/2000/svg"
+                           class="h-4 w-4 text-gray-400 transition-transform duration-200"
+                           fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                       </svg>
+                   </button>
+                   <div id="faq-list" class="hidden overflow-y-auto max-h-[260px]"></div>
+               </div>
+
+               <!-- Chat Box — px-4 matches FAQ panel horizontal padding so text aligns -->
+               <div id="ai-chat-faq-wrapper"
+                   class="w-full flex-1 min-h-0 bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+
+                   <!-- Scrollable messages area -->
+                   <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4" id="ai-chat-messages" style="max-height:480px">
+
+                       <!-- Sticky header: Download Chat only, px-4 to match -->
+                       <div class="sticky top-0 z-10 bg-white pt-3 pb-1 -mx-4 px-4">
+                           <div class="flex justify-end">
+                               <button type="button" id="ai-chat-download"
+                                   class="text-xs text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer p-0">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/>
+                                   </svg>
+                                   Download Chat
+                               </button>
+                           </div>
+                       </div>
+
+                       <!-- Welcome message — no divider, generous top spacing -->
+                       <p class="text-sm text-gray-700 m-0" style="padding:12px 0 16px">
+                           Hello! If you have any questions about the search results displayed on the left, we're happy to help you find exactly what you're looking for!
+                       </p>
+
+                       <!-- Messages injected here by JS -->
+                       <div id="ai-chat-messages-list" class="space-y-4 pb-4"></div>
+
+                       <!-- Typing indicator -->
+                       <div id="ai-chat-typing" class="hidden pb-2">
+                           <div class="flex items-center gap-1 h-10">
+                               <span class="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0s"></span>
+                               <span class="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0.15s"></span>
+                               <span class="inline-block w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay:0.3s"></span>
+                           </div>
+                       </div>
+                   </div>
+
+                   <!-- Footer: input + powered-by, px-4 to match -->
+                   <div class="shrink-0 border-t border-gray-200 bg-white px-4 py-3">
+                       <div style="position:relative;display:flex;align-items:center">
+                           <textarea id="ai-chat-input" rows="1"
+                               style="flex:1;resize:none;border-radius:10px;border:1px solid #e5e7eb;padding:10px 48px 10px 16px;font-size:0.875rem;color:#1f2937;background:#f9fafb;outline:none;box-shadow:0 1px 2px rgba(0,0,0,0.05);min-height:42px;max-height:120px;overflow:hidden;line-height:1.5;font-family:inherit;box-sizing:border-box;display:block;width:100%"
+                               placeholder="Ask for more details..."></textarea>
+                           <button type="button" id="ai-chat-submit"
+                               style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;background:#1F40AF;color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,0.2);padding:0">
+                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width:18px;height:18px">
+                                   <path d="M3.478 2.405a.75.75 0 00-.926.94l2.432 7.905H13.5a.75.75 0 010 1.5H4.984l-2.432 7.905a.75.75 0 00.926.94 60.519 60.519 0 0018.445-8.986.75.75 0 000-1.218A60.517 60.517 0 003.478 2.405z"/>
+                               </svg>
+                           </button>
+                       </div>
+                       <p style="margin:8px 0 0;font-size:0.75rem;color:#6b7280;text-align:center;display:flex;align-items:center;justify-content:center;gap:4px">
+                           Powered by
+                           <img src="/modules/custom/dir_ai_search/images/unnanu-logo.webp" alt="unnanu" style="height:16px;width:auto;margin-left:4px;vertical-align:middle">
+                       </p>
+                   </div>
+               </div><!-- end chat box -->
+
+               <!-- Preview panel: shown as modal overlay (appended to body by JS) -->
+               <div id="ai-preview-panel-wrapper"
+                   class="hidden flex-1 min-h-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-col"></div>
+
+           </div><!-- end sticky container -->
+       </aside>
+   </div>
+</div></div>

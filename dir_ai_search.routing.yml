@@ -1,0 +1,56 @@
+# ─── Page routes ─────────────────────────────────────────────────────────────
+
+dir_ai_search.content:
+  path: '/ai-search-content'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchController::buildContent'
+    _title: 'Search All Pages & Content'
+  requirements:
+    _permission: 'access content'
+
+dir_ai_search.contracts:
+  path: '/ai-search-contracts'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchController::buildContracts'
+    _title: 'Contracts & Vendors Results'
+  requirements:
+    _permission: 'access content'
+
+# ─── API proxy routes ─────────────────────────────────────────────────────────
+# These receive fetch() calls from dir_ai_search.js and ai-search-autocomplete.js
+# and forward them server-side to the upstream Unnanu AI Search API.
+# Using _access: 'TRUE' is correct here — these are read-only search proxies,
+# not Drupal form submissions, so no CSRF token is needed.
+
+dir_ai_search.proxy.search:
+  path: '/ai-search/proxy/search'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchProxyController::search'
+    _title: 'AI Search Proxy – Search'
+  methods: [POST]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+
+dir_ai_search.proxy.chat:
+  path: '/ai-search/proxy/chat'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchProxyController::chat'
+    _title: 'AI Search Proxy – Chat'
+  methods: [POST]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE
+
+dir_ai_search.proxy.autocomplete:
+  path: '/ai-search/proxy/autocomplete'
+  defaults:
+    _controller: '\Drupal\dir_ai_search\Controller\AiSearchProxyController::autocomplete'
+    _title: 'AI Search Proxy – Autocomplete'
+  methods: [GET]
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: TRUE

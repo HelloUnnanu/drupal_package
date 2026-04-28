@@ -1,0 +1,11 @@
+# Secrets — must never be committed
+secret.json
+
+# macOS metadata
+.DS_Store
+
+# IDE / editor files
+.idea/
+.vscode/
+*.swp
+*.swo
