@@ -65,7 +65,7 @@ class AiSearchApiService {
       ]);
       return json_decode((string) $response->getBody(), TRUE) ?? [];
     }
-    catch (RequestException $e) {
+    catch (\Exception $e) {
       $this->logger->error('AI Search POST @path failed: @msg', [
         '@path' => $path,
         '@msg'  => $e->getMessage(),
@@ -86,12 +86,14 @@ class AiSearchApiService {
       ]);
       return json_decode((string) $response->getBody(), TRUE) ?? [];
     }
-    catch (RequestException $e) {
+    catch (\Exception $e) {
+      // Catches both RequestException (upstream error) and RuntimeException
+      // (missing/misconfigured secret.json). Autocomplete always degrades
+      // gracefully — never crash the page over a suggestion fetch.
       $this->logger->error('AI Search GET @path failed: @msg', [
         '@path' => $path,
         '@msg'  => $e->getMessage(),
       ]);
-      // Autocomplete failures should degrade gracefully.
       return [];
     }
   }
