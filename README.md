@@ -131,20 +131,18 @@ Unnanu branding image displayed in the chat panel footer ("Powered by Unnanu").
 ## Configuration
 
 ### API Base URL
-The upstream API URL is resolved in this order:
+The upstream API URL is read **exclusively** from `secret.json`, located one level above the Drupal docroot. There is no hardcoded fallback — the module will throw a `RuntimeException` on any search request if the file is absent or the key is empty.
 
-1. **`secret.json`** at `<drupal_root>/../secret.json`:
-   ```json
-   {
-     "ai_search": {
-       "api_base_url": "https://your-api-host.example.com"
-     }
-   }
-   ```
-2. **Drupal config** — `dir_ai_search.settings` (`api_base_url` key), manageable via `drush config:set` or the Config UI.
-3. **Hard-coded default** — `https://azapp-aisearch.azurewebsites.net`.
+**Required file: `<drupal_root>/../secret.json`**
+```json
+{
+  "ai_search": {
+    "api_base_url": "https://your-api-host.example.com"
+  }
+}
+```
 
-> **Note:** `secret.json` must be placed **outside** the Drupal docroot (one level above) and must **not** be committed to version control. It is listed in `.gitignore`.
+> `secret.json` must **never** be committed to version control — it is listed in `.gitignore`. The `api_base_url` key in `config/install/dir_ai_search.settings.yml` is intentionally blank and exists only to satisfy the Drupal config schema.
 
 ---
 

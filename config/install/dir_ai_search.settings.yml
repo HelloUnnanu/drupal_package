@@ -1,1 +1,12 @@
-api_base_url: 'https://azapp-aisearch.azurewebsites.net'
+# API base URL is intentionally blank here.
+# It MUST be set in secret.json (one level above the Drupal docroot):
+#
+#   {
+#     "ai_search": {
+#       "api_base_url": "https://your-api-host.example.com"
+#     }
+#   }
+#
+# The module will throw a RuntimeException on any search request if
+# secret.json is absent or api_base_url is empty.
+api_base_url: ''

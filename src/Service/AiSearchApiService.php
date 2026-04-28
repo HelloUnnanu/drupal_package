@@ -57,20 +57,20 @@ class AiSearchApiService {
   // ──────────────────────────────────────────────────────────────────────────
 
   protected function baseUrl(): string {
-    // Try secret.json one level above docroot first.
     $secretFile = DRUPAL_ROOT . '/../secret.json';
-    if (is_file($secretFile)) {
-      $secrets = json_decode(file_get_contents($secretFile), TRUE);
-      $url = $secrets['ai_search']['api_base_url'] ?? '';
-      if ($url !== '') {
-        return rtrim($url, '/');
-      }
+
+    if (!is_file($secretFile)) {
+      throw new \RuntimeException('secret.json not found at ' . $secretFile . '. The AI Search API URL must be configured there.');
     }
 
-    return rtrim(
-      $this->config->get('api_base_url') ?: 'https://azapp-aisearch.azurewebsites.net',
-      '/'
-    );
+    $secrets = json_decode(file_get_contents($secretFile), TRUE);
+    $url = $secrets['ai_search']['api_base_url'] ?? '';
+
+    if ($url === '') {
+      throw new \RuntimeException('ai_search.api_base_url is missing or empty in secret.json.');
+    }
+
+    return rtrim($url, '/');
   }
 
   /**
