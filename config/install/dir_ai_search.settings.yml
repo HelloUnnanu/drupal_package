@@ -1,1 +1,3 @@
-api_base_url: 'https://azapp-aisearch.azurewebsites.net'
+# All runtime secrets (including the AI Search API URL) are loaded from
+# secret.json at DRUPAL_ROOT/../secret.json. See README.md for the
+# required structure. This file is intentionally empty.

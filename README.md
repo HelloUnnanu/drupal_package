@@ -69,13 +69,13 @@ Defines two Drupal asset libraries:
 - **`autocomplete`** (v1.0) — loads `ai-search-autocomplete.js`, attached globally on every page.
 
 ### `dir_ai_search.services.yml`
-Registers `dir_ai_search.api_service` — an instance of `AiSearchApiService` — injecting Drupal's `http_client` (Guzzle), `config.factory`, and `logger.factory`.
+Registers `dir_ai_search.api_service` — an instance of `AiSearchApiService` — injecting Drupal's `http_client` (Guzzle) and `logger.factory`.
 
 ### `dir_ai_search.schema.yml`
-Defines the config schema for `dir_ai_search.settings`, exposing a single string key `api_base_url` for the Drupal config system.
+Defines the config schema for `dir_ai_search.settings`. No keys are stored here — the schema object exists to satisfy Drupal's config system requirements.
 
 ### `config/install/dir_ai_search.settings.yml`
-Default configuration installed when the module is enabled. Sets `api_base_url` to `https://azapp-aisearch.azurewebsites.net`. Can be overridden at runtime via `secret.json` (see below).
+Installed when the module is enabled. Intentionally empty — all runtime secrets including the API URL are loaded from `secret.json`. See the Configuration section below.
 
 ### `src/Controller/AiSearchController.php`
 Extends `ControllerBase`. Provides two page-builder methods:
@@ -91,7 +91,7 @@ Thin HTTP proxy between the Drupal front-end JS and the upstream Unnanu API. Han
 All three methods parse request bodies/query-strings, validate required fields, and return `JsonResponse`. Upstream failures return `502 Bad Gateway`.
 
 ### `src/Service/AiSearchApiService.php`
-Centralised Guzzle-based HTTP client. Resolves the API base URL from `secret.json` one level above the Drupal root (if present) and falls back to the configured value. Implements:
+Centralised Guzzle-based HTTP client. Reads the API base URL exclusively from `secret.json` one level above the Drupal root (`DRUPAL_ROOT/../secret.json`). Throws a `RuntimeException` immediately if the file is absent or `ai_search.api_base_url` is empty — no fallback exists by design. Implements:
 
 | Method | Upstream Endpoint | Type |
 |---|---|---|
@@ -131,20 +131,18 @@ Unnanu branding image displayed in the chat panel footer ("Powered by Unnanu").
 ## Configuration
 
 ### API Base URL
-The upstream API URL is resolved in this order:
+The upstream API URL is read **exclusively** from `secret.json`, located one level above the Drupal docroot. There is no hardcoded fallback — the module will throw a `RuntimeException` on any search request if the file is absent or the key is empty.
 
-1. **`secret.json`** at `<drupal_root>/../secret.json`:
-   ```json
-   {
-     "ai_search": {
-       "api_base_url": "https://your-api-host.example.com"
-     }
-   }
-   ```
-2. **Drupal config** — `dir_ai_search.settings` (`api_base_url` key), manageable via `drush config:set` or the Config UI.
-3. **Hard-coded default** — `https://azapp-aisearch.azurewebsites.net`.
+**Required file: `<drupal_root>/../secret.json`**
+```json
+{
+  "ai_search": {
+    "api_base_url": "https://your-api-host.example.com"
+  }
+}
+```
 
-> **Note:** `secret.json` must be placed **outside** the Drupal docroot (one level above) and must **not** be committed to version control. It is listed in `.gitignore`.
+> `secret.json` must **never** be committed to version control — it is listed in `.gitignore`. The `api_base_url` key in `config/install/dir_ai_search.settings.yml` is intentionally blank and exists only to satisfy the Drupal config schema.
 
 ---
 
