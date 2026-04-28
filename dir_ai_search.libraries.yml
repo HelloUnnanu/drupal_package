@@ -1,5 +1,5 @@
 dir_ai_search:
-  version: 1.0
+  version: 1.4
   css:
     theme:
       css/dir_ai_search.css: {}

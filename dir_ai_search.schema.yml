@@ -1,0 +1,7 @@
+dir_ai_search.settings:
+  type: config_object
+  label: 'DIR AI Search Settings'
+  mapping:
+    api_base_url:
+      type: string
+      label: 'External AI Search API base URL'

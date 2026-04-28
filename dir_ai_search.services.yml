@@ -1,0 +1,7 @@
+services:
+  dir_ai_search.api_service:
+    class: Drupal\dir_ai_search\Service\AiSearchApiService
+    arguments:
+      - '@http_client'
+      - '@config.factory'
+      - '@logger.factory'

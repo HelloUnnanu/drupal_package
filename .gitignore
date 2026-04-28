@@ -1,16 +1,19 @@
+# Secrets — must never be committed
+secret.json
+
 # Claude Code session state
 .claude/
 
-# macOS
+# macOS metadata
 .DS_Store
 ._*
+Thumbs.db
 
-# Editor / IDE
+# IDE / editor files
 .idea/
 .vscode/
 *.swp
 *.swo
 
 # OS / misc
-Thumbs.db
 *.log

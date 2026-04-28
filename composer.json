@@ -1,0 +1,31 @@
+{
+    "name": "hellounnanu/dir-ai-search",
+    "description": "Drupal module that integrates Unnanu AI Search natively into Drupal — provides content search, contracts/vendors search, AI chat, and autocomplete via a server-side proxy.",
+    "type": "drupal-module",
+    "license": "proprietary",
+    "version": "1.4.0",
+    "require": {
+        "php": "^8.1",
+        "drupal/core": "^8 || ^9 || ^10",
+        "guzzlehttp/guzzle": "^6 || ^7"
+    },
+    "authors": [
+        {
+            "name": "Bhavya Gajjarapu",
+            "email": "hello@unnanu.ai"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Drupal\\dir_ai_search\\": "src/"
+        }
+    },
+    "extra": {
+        "drupal": {
+            "version": "1.4.0",
+            "datestamp": "1714262400"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
