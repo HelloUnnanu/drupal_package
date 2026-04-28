@@ -1,12 +1,3 @@
-# API base URL is intentionally blank here.
-# It MUST be set in secret.json (one level above the Drupal docroot):
-#
-#   {
-#     "ai_search": {
-#       "api_base_url": "https://your-api-host.example.com"
-#     }
-#   }
-#
-# The module will throw a RuntimeException on any search request if
-# secret.json is absent or api_base_url is empty.
-api_base_url: ''
+# All runtime secrets (including the AI Search API URL) are loaded from
+# secret.json at DRUPAL_ROOT/../secret.json. See README.md for the
+# required structure. This file is intentionally empty.

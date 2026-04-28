@@ -2,7 +2,6 @@
 
 namespace Drupal\dir_ai_search\Service;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\RequestException;
 use Psr\Log\LoggerInterface;
@@ -10,45 +9,26 @@ use Psr\Log\LoggerInterface;
 /**
  * Proxies all calls to the external Unnanu AI Search API.
  *
- * Centralises the API base URL (configured at dir_ai_search.settings) so the
- * frontend JS never needs to know the upstream origin — removing the need for
- * CORS headers on the external server and allowing the URL to be changed
- * without a code deploy.
+ * The API base URL is read exclusively from secret.json, located one level
+ * above the Drupal docroot (DRUPAL_ROOT/../secret.json). No config fallback
+ * exists by design — a missing or misconfigured secret.json surfaces as a
+ * RuntimeException rather than silently hitting the wrong endpoint.
  */
 class AiSearchApiService {
 
-  /**
-   * @var \GuzzleHttp\ClientInterface
-   */
   protected ClientInterface $httpClient;
 
-  /**
-   * @var \Drupal\Core\Config\ImmutableConfig
-   */
-  protected $config;
-
-  /**
-   * @var \Psr\Log\LoggerInterface
-   */
   protected LoggerInterface $logger;
 
-  /**
-   * Default timeout in seconds for search / chat requests.
-   */
   const TIMEOUT_SEARCH = 30;
 
-  /**
-   * Default timeout in seconds for autocomplete (fast path).
-   */
   const TIMEOUT_AUTO = 10;
 
   public function __construct(
     ClientInterface $http_client,
-    ConfigFactoryInterface $config_factory,
     $logger_factory
   ) {
     $this->httpClient = $http_client;
-    $this->config = $config_factory->get('dir_ai_search.settings');
     $this->logger = $logger_factory->get('dir_ai_search');
   }
 

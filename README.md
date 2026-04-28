@@ -69,13 +69,13 @@ Defines two Drupal asset libraries:
 - **`autocomplete`** (v1.0) — loads `ai-search-autocomplete.js`, attached globally on every page.
 
 ### `dir_ai_search.services.yml`
-Registers `dir_ai_search.api_service` — an instance of `AiSearchApiService` — injecting Drupal's `http_client` (Guzzle), `config.factory`, and `logger.factory`.
+Registers `dir_ai_search.api_service` — an instance of `AiSearchApiService` — injecting Drupal's `http_client` (Guzzle) and `logger.factory`.
 
 ### `dir_ai_search.schema.yml`
-Defines the config schema for `dir_ai_search.settings`, exposing a single string key `api_base_url` for the Drupal config system.
+Defines the config schema for `dir_ai_search.settings`. No keys are stored here — the schema object exists to satisfy Drupal's config system requirements.
 
 ### `config/install/dir_ai_search.settings.yml`
-Default configuration installed when the module is enabled. Sets `api_base_url` to `https://azapp-aisearch.azurewebsites.net`. Can be overridden at runtime via `secret.json` (see below).
+Installed when the module is enabled. Intentionally empty — all runtime secrets including the API URL are loaded from `secret.json`. See the Configuration section below.
 
 ### `src/Controller/AiSearchController.php`
 Extends `ControllerBase`. Provides two page-builder methods:
@@ -91,7 +91,7 @@ Thin HTTP proxy between the Drupal front-end JS and the upstream Unnanu API. Han
 All three methods parse request bodies/query-strings, validate required fields, and return `JsonResponse`. Upstream failures return `502 Bad Gateway`.
 
 ### `src/Service/AiSearchApiService.php`
-Centralised Guzzle-based HTTP client. Resolves the API base URL from `secret.json` one level above the Drupal root (if present) and falls back to the configured value. Implements:
+Centralised Guzzle-based HTTP client. Reads the API base URL exclusively from `secret.json` one level above the Drupal root (`DRUPAL_ROOT/../secret.json`). Throws a `RuntimeException` immediately if the file is absent or `ai_search.api_base_url` is empty — no fallback exists by design. Implements:
 
 | Method | Upstream Endpoint | Type |
 |---|---|---|
