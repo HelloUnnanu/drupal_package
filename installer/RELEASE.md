@@ -18,33 +18,26 @@ Maintainer cheatsheet for cutting versions and keeping the `installer/install.sh
 
 ## 2. Cutting a release
 
+Releases are **fully automated** by `.github/workflows/release.yml`. Pushing a SemVer tag is the only action required — the workflow creates a published, non-draft GitHub Release pointing at that tag.
+
 From the repo root on `main`, with a clean working tree:
 
 ```bash
 # 1. Make sure code is merged and CI is green
 git checkout main && git pull --ff-only
 
-# 2. Pick the next tag
+# 2. Pick the next tag (SemVer)
 TAG=v1.1.0
 
-# 3. Tag & push
+# 3. Tag & push — this triggers .github/workflows/release.yml
 git tag -a "$TAG" -m "$TAG"
 git push origin "$TAG"
+```
 
-# 4. Create the GitHub release (this is what install.sh reads via /releases/latest)
-gh release create "$TAG" \
-  --title "$TAG" \
-  --notes "$(cat <<'EOF'
-## What's new
-- ...
+That's it. Within ~30 seconds the workflow run finishes and the release is live at:
 
-## Fixes
-- ...
-
-## Upgrade notes
-- ...
-EOF
-)"
+```
+https://github.com/HelloUnnanu/drupal_package/releases/tag/<TAG>
 ```
 
 GitHub automatically exposes the source tarball at:
@@ -55,9 +48,22 @@ GET https://api.github.com/repos/HelloUnnanu/drupal_package/tarball/<TAG>
 
 No manual asset upload is required — `install.sh` pulls this tarball directly.
 
+### Watching the workflow
+
+```bash
+gh run list --workflow=release.yml --limit 5
+gh run watch                       # interactive, picks the most recent run
+```
+
+If the workflow fails, the tag still exists but no release was published. Fix the issue (usually permissions or workflow YAML), delete the GitHub-side release if a partial one was created, and either re-run the failed workflow or delete & re-push the tag.
+
 ### Pre-release / release candidates
 
-Use `gh release create ... --prerelease` for `v1.2.0-rc.1` style tags. `install.sh` calls `/releases/latest`, which ignores prereleases, so consumers with `--version vX.Y.Z-rc.N` can opt in explicitly.
+Tags containing a hyphen (`v1.2.0-rc.1`, `v2.0.0-beta.3`) are auto-detected by the workflow and published as prereleases — they are **not** marked "Latest", so `install.sh`'s default `/releases/latest` lookup keeps consumers on the last stable. Opt-in users pin via `--version vX.Y.Z-rc.N`.
+
+### Adding richer release notes
+
+The workflow generates minimal notes by default. To author custom notes, edit the release on GitHub after the workflow completes (`gh release edit <TAG> --notes-file notes.md`), or extend `release.yml` to read notes from a `CHANGELOG.md` block.
 
 ---
 
