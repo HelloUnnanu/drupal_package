@@ -82,12 +82,7 @@ If you add a new dev-only directory (fixtures, docs, build tooling), add it to t
 
 ## 4. Repository access & consumer distribution
 
-`HelloUnnanu/drupal_package` is **public**. `install.sh` calls the GitHub REST API anonymously — no PAT, no `Authorization` header, no embedded credentials. The relevant config block is intentionally empty:
-
-```bash
-# install.sh
-GITHUB_PAT=""   # left blank — repo is public, anonymous calls work
-```
+`HelloUnnanu/drupal_package` is **public**. `install.sh` calls the GitHub REST API anonymously — no PAT, no `Authorization` header, no embedded credentials, no auth code path at all.
 
 ### Why public + anonymous
 
@@ -97,9 +92,10 @@ GITHUB_PAT=""   # left blank — repo is public, anonymous calls work
 
 ### If the repo ever goes private again
 
-The path back is:
+The script no longer carries any PAT plumbing — it would need to be added back. The path is:
+
 1. Generate a fine-grained, read-only PAT scoped to just this repo (`Contents: Read-only`, `Metadata: Read-only`).
-2. Set `GITHUB_PAT="github_pat_…"` in `install.sh`. The existing `gh_curl()` helper auto-attaches the `Authorization` header when the variable is non-empty.
+2. In `install.sh`, add a `GITHUB_PAT="github_pat_…"` constant near the other config vars and modify `gh_curl()` to attach `-H "Authorization: Bearer $GITHUB_PAT"`.
 3. Ship as a PATCH release.
 4. Plan rotation every 90 days; consumers on older `install.sh` copies will hit `401` once the PAT expires and must re-download.
 
@@ -153,7 +149,7 @@ bash install.sh --target /path/to/project --force   # scripted/non-interactive
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `404` on `/releases/latest`               | Release exists but is in **Draft** state (invisible to the public API). Publish it: `gh release edit <TAG> --draft=false`.      |
 | `404` on `/repos/.../releases/latest`     | No published releases at all — check `gh release list`. The auto-publish workflow may have failed; inspect `gh run list`.        |
-| `403 rate limit exceeded` on GitHub API   | Anonymous IP hit the 60 req/h cap. Wait an hour, or set `GITHUB_PAT` in `install.sh` to a read-only fine-grained token.         |
+| `403 rate limit exceeded` on GitHub API   | Anonymous IP hit the 60 req/h cap. Wait an hour, or add a read-only PAT to `gh_curl()` (see §4).                                |
 | `Could not determine latest release tag`  | No releases exist, or the repo/tag was renamed — check `gh release list`.                                                       |
 | `Neither docroot/ nor web/ found`         | User pointed `--target` at `docroot/` itself; should be the **project root**.                                                   |
 | `drush en` fails in DDEV                  | Project not started: `ddev start` then re-run `install.sh --force`.                                                             |
