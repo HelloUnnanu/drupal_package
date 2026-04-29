@@ -80,45 +80,40 @@ If you add a new dev-only directory (fixtures, docs, build tooling), add it to t
 
 ---
 
-## 4. PAT (GitHub Personal Access Token)
+## 4. Repository access & consumer distribution
 
-Because the repo is private, `install.sh` ships with an embedded **fine-grained PAT**, read-only, scoped to only this repo.
+`HelloUnnanu/drupal_package` is **public**. `install.sh` calls the GitHub REST API anonymously — no PAT, no `Authorization` header, no embedded credentials. The relevant config block is intentionally empty:
 
-### Creating the PAT
+```bash
+# install.sh
+GITHUB_PAT=""   # left blank — repo is public, anonymous calls work
+```
 
-1. https://github.com/settings/tokens?type=beta → **Generate new token**
-2. **Resource owner**: `HelloUnnanu`
-3. **Repository access**: *Only select repositories* → `HelloUnnanu/drupal_package`
-4. **Permissions (Repository)**:
-   - **Contents**: Read-only
-   - **Metadata**: Read-only *(automatically selected)*
-5. **Expiration**: 90 days (max practical).
-6. Copy the token and paste it into `install.sh`:
+### Why public + anonymous
 
-   ```bash
-   GITHUB_PAT="github_pat_XXXXXXXXXXXXXXXXXXXXXXXXXX"
-   ```
-7. Commit the change in a new release (`PATCH` bump).
+- Anonymous public-repo calls don't expire — there's nothing to rotate.
+- No risk of credential leakage in a script that's distributed to many consumers.
+- Subject to GitHub's anonymous rate limit (60 req/h per IP), which is far above any real install workload.
 
-### Why fine-grained + read-only
+### If the repo ever goes private again
 
-- Cannot push code, create releases, or read any other repo — worst-case leakage is source-read access to this one module.
-- GitHub audit log records every call, scoped by token ID.
-
-### Rotation
-
-| Event                                    | Action                                              |
-| ---------------------------------------- | --------------------------------------------------- |
-| PAT nearing expiry (7 days before)       | Generate new PAT, ship as PATCH release             |
-| Suspected leak                           | Revoke in GitHub settings immediately, then rotate  |
-| Maintainer change (owner of the PAT)     | Revoke old PAT, generate under new owner, rotate    |
-| Every 90 days (calendar reminder)        | Scheduled rotation even if no incident              |
-
-After rotation, the old `install.sh` keeps working only until the previous PAT's expiry. Consumers on older copies will hit `401 Unauthorized` and must re-download `install.sh`.
+The path back is:
+1. Generate a fine-grained, read-only PAT scoped to just this repo (`Contents: Read-only`, `Metadata: Read-only`).
+2. Set `GITHUB_PAT="github_pat_…"` in `install.sh`. The existing `gh_curl()` helper auto-attaches the `Authorization` header when the variable is non-empty.
+3. Ship as a PATCH release.
+4. Plan rotation every 90 days; consumers on older `install.sh` copies will hit `401` once the PAT expires and must re-download.
 
 ### Distribution to consumers
 
-Consumers download `install.sh` via the authenticated GitHub web UI (they must be collaborators or have org read access to browse the private repo). The PAT inside the script is not exposed on any public surface.
+Because the repo is public, **no `install.sh` download is needed**. The single-command install pulls the tarball directly:
+
+```bash
+curl -sL https://github.com/HelloUnnanu/drupal_package/archive/refs/tags/v1.1.0.tar.gz | tar -xz && \
+bash drupal_package-1.1.0/installer/install.sh --target /path/to/drupal/project --force && \
+rm -rf drupal_package-1.1.0
+```
+
+Replace `v1.1.0` with the latest tag, or substitute `latest` resolution by reading `/releases/latest` first. `install.sh --upgrade` from an existing install always self-resolves to the latest published release.
 
 ---
 
@@ -144,7 +139,7 @@ Expected:
 
 ```bash
 bash install.sh                      # install latest into prompted path
-bash install.sh --version v1.0.0     # pin a specific tag
+bash install.sh --version v1.1.0     # pin a specific tag
 bash install.sh --upgrade            # bump to latest (skips if already current)
 bash install.sh --uninstall          # remove module + drush pmu
 bash install.sh --target /path/to/project --force   # scripted/non-interactive
@@ -154,10 +149,13 @@ bash install.sh --target /path/to/project --force   # scripted/non-interactive
 
 ## 7. Troubleshooting
 
-| Symptom                                   | Likely cause / fix                                                                |
-| ----------------------------------------- | --------------------------------------------------------------------------------- |
-| `401 Unauthorized` on GitHub API          | PAT expired or revoked → maintainer ships a new release with a rotated PAT.       |
-| `Could not determine latest release tag`  | No releases exist, or the repo/tag was renamed — check `gh release list`.         |
-| `Neither docroot/ nor web/ found`         | User pointed `--target` at `docroot/` itself; should be the **project root**.     |
-| `drush en` fails in DDEV                  | Project not started: `ddev start` then re-run `install.sh --force`.               |
-| Upgrade skips unexpectedly                | `VERSION` marker already matches latest tag. Use `--force` or bump a new release. |
+| Symptom                                   | Likely cause / fix                                                                                                              |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `404` on `/releases/latest`               | Release exists but is in **Draft** state (invisible to the public API). Publish it: `gh release edit <TAG> --draft=false`.      |
+| `404` on `/repos/.../releases/latest`     | No published releases at all — check `gh release list`. The auto-publish workflow may have failed; inspect `gh run list`.        |
+| `403 rate limit exceeded` on GitHub API   | Anonymous IP hit the 60 req/h cap. Wait an hour, or set `GITHUB_PAT` in `install.sh` to a read-only fine-grained token.         |
+| `Could not determine latest release tag`  | No releases exist, or the repo/tag was renamed — check `gh release list`.                                                       |
+| `Neither docroot/ nor web/ found`         | User pointed `--target` at `docroot/` itself; should be the **project root**.                                                   |
+| `drush en` fails in DDEV                  | Project not started: `ddev start` then re-run `install.sh --force`.                                                             |
+| Upgrade skips unexpectedly                | `VERSION` marker already matches latest tag. Use `--force` or bump a new release.                                               |
+| Tag pushed but no release appears         | Workflow failed or didn't trigger. Check `gh run list --workflow=release.yml`. Tag must match `v*.*.*`.                          |
