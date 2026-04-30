@@ -1,12 +1,35 @@
+<style>
+  #ai-chat-faq-wrapper,
+  #ai-chat-messages,
+  #ai-chat-messages .sticky {
+    background-color: #f4f6f9 !important;
+  }
+  /* Override theme aside margin and padding */
+  #unnanu-ai-search-wrapper aside {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  /* Two-column layout at 1280px+ */
+  #ai-search-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (min-width: 1280px) {
+    #ai-search-grid {
+      grid-template-columns: minmax(0, 1.8fr) minmax(360px, 0.95fr);
+    }
+  }
+</style>
 <div id="root">
 <div id="unnanu-ai-search-wrapper" class="unnanu-ai-search-wrapper mt-4 pb-4 w-full" data-search-type="{{ search_type }}">
-   <!-- Filters Pill row will be injected here -->
-   <div id="ai-search-filters-container"></div>
-
    <!-- AI Search Grid Layout -->
-   <div class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(360px,0.95fr)] font-sans">
-       <!-- Results Column -->
+   <div id="ai-search-grid" class="font-sans">
+       <!-- Results Column (filters injected here so aside aligns to top) -->
        <div class="min-w-0">
+           <!-- Filters Pill row will be injected here -->
+           <div id="ai-search-filters-container"></div>
            <div id="ai-search-results-container" class="bg-transparent">
                <div id="ai-search-metadata" class="mb-4 text-sm text-gray-600 hidden"></div>
                <div class="flex flex-col items-center justify-center gap-3 p-12" id="ai-search-loading">
@@ -18,15 +41,15 @@
            </div>
        </div>
 
-       <!-- Chat / Preview Column -->
-       <aside class="min-w-0">
-           <div class="xl:sticky xl:top-[90px] xl:h-[calc(100vh-110px)] flex flex-col gap-3" id="ai-right-column">
+       <!-- Chat / Preview Column — sticky on the aside (grid cell) itself -->
+       <aside style="position:sticky;top:90px;height:calc(100vh - 160px);display:flex;flex-direction:column;margin:0;padding:0">
+           <div class="flex flex-col gap-3" style="height:100%;overflow:hidden" id="ai-right-column">
 
                <!-- FAQ / Suggested Questions Panel -->
-               <div id="ai-faq-container" class="hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-shrink-0 overflow-hidden flex-col">
+               <div id="ai-faq-container" class="hidden rounded-xl border border-gray-200 shadow-sm flex-shrink-0 overflow-hidden flex-col" style="background:#f4f6f9">
                    <button type="button" id="faq-toggle"
-                       class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 bg-white cursor-pointer border-0">
-                       <span class="text-sm font-semibold text-gray-800">Quick FAQ's</span>
+                       class="w-full flex items-center justify-between px-4 py-3 text-left cursor-pointer border-0" style="background:#f4f6f9">
+                       <span class="text-sm font-bold" style="color:#1F40AF">Quick FAQ's</span>
                        <svg id="faq-chevron" xmlns="http://www.w3.org/2000/svg"
                            class="h-4 w-4 text-gray-400 transition-transform duration-200"
                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -36,15 +59,16 @@
                    <div id="faq-list" class="hidden overflow-y-auto max-h-[260px]"></div>
                </div>
 
-               <!-- Chat Box — px-4 matches FAQ panel horizontal padding so text aligns -->
+               <!-- Chat Box -->
                <div id="ai-chat-faq-wrapper"
-                   class="w-full flex-1 min-h-0 bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+                   class="w-full flex-1 min-h-0 rounded-xl overflow-hidden flex flex-col border border-gray-200"
+                   style="background:#f4f6f9">
 
                    <!-- Scrollable messages area -->
-                   <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4" id="ai-chat-messages" style="max-height:480px">
+                   <div class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-4" id="ai-chat-messages" style="background:#f4f6f9">
 
-                       <!-- Sticky header: Download Chat only, px-4 to match -->
-                       <div class="sticky top-0 z-10 bg-white pt-3 pb-1 -mx-4 px-4">
+                       <!-- Sticky header: Download Chat -->
+                       <div class="sticky top-0 z-10 pt-3 pb-1 -mx-4 px-4" style="background:#f4f6f9">
                            <div class="flex justify-end">
                                <button type="button" id="ai-chat-download"
                                    class="text-xs text-blue-600 hover:text-blue-800 font-medium inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer p-0">
@@ -56,7 +80,7 @@
                            </div>
                        </div>
 
-                       <!-- Welcome message — no divider, generous top spacing -->
+                       <!-- Welcome message -->
                        <p class="text-sm text-gray-700 m-0" style="padding:12px 0 16px">
                            Hello! If you have any questions about the search results displayed on the left, we're happy to help you find exactly what you're looking for!
                        </p>
@@ -74,8 +98,8 @@
                        </div>
                    </div>
 
-                   <!-- Footer: input + powered-by, px-4 to match -->
-                   <div class="shrink-0 border-t border-gray-200 bg-white px-4 py-3">
+                   <!-- Footer: input + powered-by -->
+                   <div class="shrink-0 border-t border-gray-200 px-4 py-3" style="background:#f4f6f9">
                        <div style="position:relative;display:flex;align-items:center">
                            <textarea id="ai-chat-input" rows="1"
                                style="flex:1;resize:none;border-radius:10px;border:1px solid #e5e7eb;padding:10px 48px 10px 16px;font-size:0.875rem;color:#1f2937;background:#f9fafb;outline:none;box-shadow:0 1px 2px rgba(0,0,0,0.05);min-height:42px;max-height:120px;overflow:hidden;line-height:1.5;font-family:inherit;box-sizing:border-box;display:block;width:100%"
@@ -98,7 +122,7 @@
                <div id="ai-preview-panel-wrapper"
                    class="hidden flex-1 min-h-0 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm flex-col"></div>
 
-           </div><!-- end sticky container -->
+           </div>
        </aside>
    </div>
 </div></div>
