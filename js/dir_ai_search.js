@@ -13,8 +13,6 @@
     return function(...args) { clearTimeout(t); t = setTimeout(() => fn.apply(this, args), wait); };
   }
 
-  const ITEMS_PER_PAGE = 5;
-
   let state = {
     query: '',
     searchType: 'content',
@@ -25,7 +23,6 @@
     allUniqueItems: [],
     filteredItems: [],
     activeModality: 'all',
-    currentPage: 1,
     contractsVendors: []
   };
 
@@ -204,9 +201,8 @@
         }
     });
 
-    // Make chat messages area scrollable with a fixed max-height on all screen sizes
+    // overflow is handled by flex layout (flex-1 min-h-0 on the scroll container)
     if (DOM.chat.scroll) {
-        DOM.chat.scroll.style.maxHeight = '480px';
         DOM.chat.scroll.style.overflowY = 'auto';
         DOM.chat.scroll.style.overflowX = 'hidden';
     }
@@ -616,37 +612,26 @@
     heading.innerHTML = `Here's <span class="font-semibold">a list of all vendors</span> who meet the above AI-Search query.`;
     DOM.resultsList.appendChild(heading);
 
-    // ── Paginated vendor cards ────────────────────────────────────────────────
+    // ── Vendor cards ──────────────────────────────────────────────────────────
     const cardsContainer = document.createElement('div');
     cardsContainer.id = 'ai-cards-list';
     cardsContainer.className = 'space-y-3';
     DOM.resultsList.appendChild(cardsContainer);
 
-    const paginationContainer = document.createElement('div');
-    paginationContainer.id = 'ai-pagination';
-    DOM.resultsList.appendChild(paginationContainer);
-
     state.contractsVendors = vendors;
-    renderVendorPage(1);
+    renderVendorPage();
+    renderFaq();
   }
 
-  // ─── Render one page of vendor cards ──────────────────────────────────────
-  function renderVendorPage(page) {
-    state.currentPage = page;
-    const vendors    = state.contractsVendors || [];
-    const totalPages = Math.ceil(vendors.length / ITEMS_PER_PAGE);
-    const start      = (page - 1) * ITEMS_PER_PAGE;
-    const pageVendors = vendors.slice(start, start + ITEMS_PER_PAGE);
+  // ─── Render all vendor cards ───────────────────────────────────────────────
+  function renderVendorPage() {
+    const vendors = state.contractsVendors || [];
 
     const cardsContainer = document.getElementById('ai-cards-list');
     if (!cardsContainer) return;
     cardsContainer.innerHTML = '';
 
-    if (page > 1 && DOM.resultsList) {
-        DOM.resultsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    pageVendors.forEach(vendor => {
+    vendors.forEach(vendor => {
       const isActive    = vendor.Active_status === 1;
       const statusColor = isActive ? 'text-green-600' : 'text-gray-500';
       const statusText  = isActive ? 'Active' : 'Inactive';
@@ -689,7 +674,6 @@
       cardsContainer.appendChild(card);
     });
 
-    renderPagination(page, totalPages);
   }
 
   function renderContent(items) {
@@ -758,21 +742,17 @@
         DOM.resultsList.appendChild(filtersRow);
     }
 
-    // Containers for cards + pagination (reused across page/filter changes)
+    // Container for cards (reused across filter changes)
     const listContainer = document.createElement('div');
     listContainer.id = 'ai-cards-list';
     listContainer.className = 'space-y-3';
-    const paginationContainer = document.createElement('div');
-    paginationContainer.id = 'ai-pagination';
     DOM.resultsList.appendChild(listContainer);
-    DOM.resultsList.appendChild(paginationContainer);
 
-    // Store items in state and render page 1
+    // Store items in state and render all
     state.allUniqueItems = uniqueItems;
     state.filteredItems  = uniqueItems;
     state.activeModality = 'all';
-    state.currentPage    = 1;
-    renderPageCards(1);
+    renderPageCards();
 
     // Filter pill handlers — re-render cards instead of CSS show/hide
     const pillsRow = filtersRow.querySelector('#filter-pills-row');
@@ -787,7 +767,7 @@
                 pillsRow.querySelectorAll('button[data-modality]').forEach(p => {
                     p.className = p === pill ? pillActiveClass : pillInactiveClass;
                 });
-                renderPageCards(1);
+                renderPageCards();
             };
         });
     }
@@ -795,24 +775,15 @@
     renderFaq();
   }
 
-  // ─── Render one page of cards ─────────────────────────────────────────────
-  function renderPageCards(page) {
-    state.currentPage = page;
-    const items      = state.filteredItems;
-    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-    const start      = (page - 1) * ITEMS_PER_PAGE;
-    const pageItems  = items.slice(start, start + ITEMS_PER_PAGE);
+  // ─── Render all cards ─────────────────────────────────────────────────────
+  function renderPageCards() {
+    const items = state.filteredItems;
 
     const listContainer = document.getElementById('ai-cards-list');
     if (!listContainer) return;
     listContainer.innerHTML = '';
 
-    // Scroll results into view smoothly on page change
-    if (page > 1 && DOM.resultsList) {
-        DOM.resultsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    pageItems.forEach(item => {
+    items.forEach(item => {
       const title = item.file_title || item.title || item.file_name || 'Untitled Document';
       const url = item.source_url || '#';
       let snippet = item.fileabstract || item.summary || item.body || item.content || '';
@@ -1109,60 +1080,6 @@
       listContainer.appendChild(card);
     });
 
-    renderPagination(page, totalPages);
-  }
-
-  // ─── Pagination controls ──────────────────────────────────────────────────
-  function renderPagination(currentPage, totalPages) {
-    const container = document.getElementById('ai-pagination');
-    if (!container) return;
-    if (totalPages <= 1) { container.innerHTML = ''; return; }
-
-    const btnBase = 'display:inline-flex;align-items:center;justify-content:center;min-width:36px;height:36px;padding:0 10px;border-radius:8px;font-size:0.875rem;font-weight:500;cursor:pointer;border:1px solid;transition:background 0.15s;';
-    const btnActive   = btnBase + 'background:#1F40AF;color:#fff;border-color:#1F40AF;';
-    const btnInactive = btnBase + 'background:#fff;color:#374151;border-color:#e5e7eb;';
-    const btnDisabled = btnBase + 'background:#f9fafb;color:#9ca3af;border-color:#e5e7eb;cursor:default;';
-
-    // Build page window: always show first, last, current ±1, with ellipsis
-    const pages = [];
-    for (let i = 1; i <= totalPages; i++) {
-        if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
-            pages.push(i);
-        } else if (pages[pages.length - 1] !== '...') {
-            pages.push('...');
-        }
-    }
-
-    let html = '<div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:20px 0">';
-
-    // Prev button
-    html += `<button data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''} style="${currentPage === 1 ? btnDisabled : btnInactive}">
-        <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-    </button>`;
-
-    pages.forEach(p => {
-        if (p === '...') {
-            html += `<span style="${btnDisabled}pointer-events:none">…</span>`;
-        } else {
-            html += `<button data-page="${p}" style="${p === currentPage ? btnActive : btnInactive}">${p}</button>`;
-        }
-    });
-
-    // Next button
-    html += `<button data-page="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''} style="${currentPage === totalPages ? btnDisabled : btnInactive}">
-        <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-    </button>`;
-
-    html += `<span style="font-size:0.8rem;color:#6b7280;margin-left:8px">Page ${currentPage} of ${totalPages}</span>`;
-    html += '</div>';
-
-    container.innerHTML = html;
-
-    container.querySelectorAll('button[data-page]:not([disabled])').forEach(btn => {
-        btn.addEventListener('mouseenter', () => { if (parseInt(btn.dataset.page) !== currentPage) btn.style.background = '#f3f4f6'; });
-        btn.addEventListener('mouseleave', () => { if (parseInt(btn.dataset.page) !== currentPage) btn.style.background = '#fff'; });
-        btn.onclick = () => renderPageCards(parseInt(btn.dataset.page));
-    });
   }
 
   function renderFaq() {
