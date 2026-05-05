@@ -142,25 +142,40 @@ The upstream API URL is read **exclusively** from `secret.json`, located one lev
 }
 ```
 
-> `secret.json` must **never** be committed to version control — it is listed in `.gitignore`. The `api_base_url` key in `config/install/dir_ai_search.settings.yml` is intentionally blank and exists only to satisfy the Drupal config schema.
+> `secret.json` is written automatically by the installer when you pass `--api-url`. It must **never** be committed to version control — add it to `.gitignore`. The `api_base_url` key in `config/install/dir_ai_search.settings.yml` is intentionally blank and exists only to satisfy the Drupal config schema.
 
 ---
 
 ## Installation
 
+### One-command install (recommended)
+
 ```bash
-# 1. Place the module in your Drupal installation
-cp -r dir_ai_search /path/to/drupal/docroot/modules/custom/
+curl -fsSL https://raw.githubusercontent.com/Unnanu/drupal_package/main/installer/install.sh \
+  | bash -s -- --api-url https://api.unnanu.ai
+```
 
-# 2. Enable the module
-drush en dir_ai_search -y
+The script prompts for your Drupal project root, installs the module, writes `secret.json` with the API URL, and enables the module via drush.
 
-# 3. (Optional) Override the API URL via secret.json
-echo '{"ai_search":{"api_base_url":"https://your-api.example.com"}}' \
-  > /path/to/drupal/../secret.json
+**Non-interactive (CI / scripted):**
 
-# 4. Clear caches
-drush cr
+```bash
+curl -fsSL https://raw.githubusercontent.com/Unnanu/drupal_package/main/installer/install.sh \
+  | bash -s -- --api-url https://api.unnanu.ai --target /path/to/drupal/project
+```
+
+**Pin a specific release:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Unnanu/drupal_package/v1.2.0/installer/install.sh \
+  | bash -s -- --api-url https://api.unnanu.ai --target /path/to/drupal/project
+```
+
+**Upgrade an existing install:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Unnanu/drupal_package/main/installer/install.sh \
+  | bash -s -- --upgrade --target /path/to/drupal/project
 ```
 
 ---
