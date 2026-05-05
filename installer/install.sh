@@ -20,10 +20,6 @@ GITHUB_OWNER="Unnanu"
 GITHUB_REPO="drupal_package"
 MODULE_NAME="dir_ai_search"
 
-# Repo is public — no auth needed for GitHub API tarball downloads.
-# If you ever flip this repo back to private, set a fine-grained read-only PAT here.
-GITHUB_PAT=""
-
 API_BASE="https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}"
 
 # Files/dirs inside the release tarball that must NOT be copied into the
@@ -150,13 +146,12 @@ resolve_target() {
 # ---------- Step 4: resolve version ----------
 gh_curl() {
   local url="$1" out="$2"
-  local headers=(-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
-  # Auth is optional. Public repo → anonymous calls work (60 req/hr per IP).
-  # Private repo → set GITHUB_PAT above to a fine-grained read-only PAT.
-  if [[ -n "$GITHUB_PAT" && "$GITHUB_PAT" != "__REPLACE_WITH_FINE_GRAINED_READONLY_PAT__" ]]; then
-    headers+=(-H "Authorization: Bearer $GITHUB_PAT")
-  fi
-  curl -fsSL "${headers[@]}" -o "$out" "$url" \
+  # Anonymous public-repo call. Limit: 60 requests/hour per IP — far above
+  # any realistic install workload.
+  curl -fsSL \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -o "$out" "$url" \
     || die "GitHub API request failed: $url"
 }
 

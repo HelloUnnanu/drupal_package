@@ -1,0 +1,58 @@
+name: Release on tag
+
+# Auto-publishes a GitHub Release whenever a SemVer tag is pushed.
+#
+# How it works:
+#   - Push a tag like v1.1.0 → this workflow runs → release is created and
+#     marked as "Latest" so install.sh can resolve it via /releases/latest.
+#   - Push a pre-release tag like v1.2.0-rc.1 (any tag containing a hyphen)
+#     → release is created as a prerelease and is NOT marked latest, so
+#     consumers on the default install path stay on the last stable.
+#
+# This file replaces the manual `gh release create` step in RELEASE.md.
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository at tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF#refs/tags/}"
+          REPO="${GITHUB_REPOSITORY}"
+
+          # Tags with a hyphen (e.g. v1.2.0-rc.1) are pre-releases and must
+          # not steal the "latest" slot from a stable release.
+          if [[ "$TAG" == *-* ]]; then
+            echo "Detected pre-release tag: $TAG"
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "$TAG" \
+              --notes "Pre-release $TAG. See commits: https://github.com/${REPO}/commits/${TAG}" \
+              --prerelease \
+              --verify-tag
+          else
+            echo "Detected stable tag: $TAG"
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "$TAG" \
+              --notes "Release $TAG. See commits: https://github.com/${REPO}/commits/${TAG}" \
+              --latest \
+              --verify-tag
+          fi
