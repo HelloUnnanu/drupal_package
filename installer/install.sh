@@ -16,7 +16,7 @@
 set -euo pipefail
 
 # ---------- Config ----------
-GITHUB_OWNER="HelloUnnanu"
+GITHUB_OWNER="Unnanu"
 GITHUB_REPO="drupal_package"
 MODULE_NAME="dir_ai_search"
 
