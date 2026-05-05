@@ -4,7 +4,6 @@ namespace Drupal\dir_ai_search\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\dir_ai_search\Service\AiSearchApiService;
-use GuzzleHttp\Exception\RequestException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -73,7 +72,7 @@ class AiSearchProxyController extends ControllerBase {
 
       return new JsonResponse($data);
     }
-    catch (RequestException $e) {
+    catch (\Exception $e) {
       return new JsonResponse(['error' => 'Upstream search failed'], 502);
     }
   }
@@ -108,7 +107,7 @@ class AiSearchProxyController extends ControllerBase {
 
       return new JsonResponse($data);
     }
-    catch (RequestException $e) {
+    catch (\Exception $e) {
       return new JsonResponse(['error' => 'Upstream chat failed'], 502);
     }
   }
@@ -136,18 +135,24 @@ class AiSearchProxyController extends ControllerBase {
       return new JsonResponse([]);
     }
 
-    if ($type === 'contracts') {
-      $data = $mode === 'chat'
-        ? $this->apiService->autocompleteContractsChat($query)
-        : $this->apiService->autocompleteContracts($query);
-    }
-    else {
-      $data = $mode === 'chat'
-        ? $this->apiService->autocompleteContentChat($query, $view)
-        : $this->apiService->autocompleteContent($query);
-    }
+    try {
+      if ($type === 'contracts') {
+        $data = $mode === 'chat'
+          ? $this->apiService->autocompleteContractsChat($query)
+          : $this->apiService->autocompleteContracts($query);
+      }
+      else {
+        $data = $mode === 'chat'
+          ? $this->apiService->autocompleteContentChat($query, $view)
+          : $this->apiService->autocompleteContent($query);
+      }
 
-    return new JsonResponse($data);
+      return new JsonResponse($data);
+    }
+    catch (\Exception $e) {
+      // Autocomplete must never break the page — return empty list silently.
+      return new JsonResponse([]);
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────────────

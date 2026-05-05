@@ -5,18 +5,18 @@
 # from GitHub Releases into a Drupal project under docroot/modules/custom/.
 #
 # Usage:
-#   bash install.sh                    # install latest
-#   bash install.sh --version v1.0.0   # pin a specific tag
-#   bash install.sh --upgrade          # upgrade to latest
-#   bash install.sh --uninstall        # remove module
-#   bash install.sh --target <path>    # non-interactive target
-#   bash install.sh --force            # overwrite existing install
+#   bash install.sh --api-url <url>                       # install latest
+#   bash install.sh --api-url <url> --version v1.0.0      # pin a specific tag
+#   bash install.sh --upgrade [--api-url <url>]           # upgrade to latest
+#   bash install.sh --uninstall                           # remove module
+#   bash install.sh --target <path>                       # non-interactive target
+#   bash install.sh --force                               # overwrite existing install
 #   bash install.sh --help
 #
 set -euo pipefail
 
 # ---------- Config ----------
-GITHUB_OWNER="HelloUnnanu"
+GITHUB_OWNER="Unnanu"
 GITHUB_REPO="drupal_package"
 MODULE_NAME="dir_ai_search"
 
@@ -54,6 +54,7 @@ MODE="install"      # install | upgrade | uninstall
 VERSION=""
 TARGET=""
 FORCE=0
+API_URL=""
 
 print_help() {
   cat <<EOF
@@ -66,6 +67,9 @@ Usage:
   bash install.sh --help
 
 Options:
+  --api-url <url>   AI Search API base URL (e.g. https://api.unnanu.ai).
+                    Written into secret.json. Required for install; prompted if omitted.
+                    Optional for upgrade — updates secret.json only when supplied.
   --version <tag>   Install a specific release tag (e.g. v1.0.0). Default: latest.
   --target <path>   Drupal project root (contains docroot/ or web/). Prompted if omitted.
   --upgrade         Upgrade the already-installed module to the latest tag.
@@ -81,6 +85,7 @@ while [[ $# -gt 0 ]]; do
     --uninstall)  MODE="uninstall"; shift ;;
     --version)    VERSION="${2:-}"; shift 2 ;;
     --target)     TARGET="${2:-}"; shift 2 ;;
+    --api-url)    API_URL="${2:-}"; shift 2 ;;
     --force)      FORCE=1; shift ;;
     -h|--help)    print_help; exit 0 ;;
     *)            die "Unknown argument: $1 (try --help)" ;;
@@ -261,6 +266,39 @@ activate_module() {
   fi
 }
 
+# ---------- Step 8: secret.json ----------
+prompt_api_url() {
+  if [[ -z "$API_URL" ]]; then
+    printf "${C_BOLD}AI Search API base URL${C_RESET} (e.g. https://api.unnanu.ai): "
+    read -r API_URL </dev/tty
+  fi
+  [[ -n "$API_URL" ]] || die "--api-url is required for install."
+}
+
+write_secret_json() {
+  local secret_file="$TARGET/secret.json"
+  log "Writing API URL to $secret_file"
+  if [[ $HAS_JQ -eq 1 ]]; then
+    jq -n --arg url "$API_URL" '{"ai_search":{"api_base_url":$url}}' > "$secret_file"
+  else
+    printf '{\n  "ai_search": {\n    "api_base_url": "%s"\n  }\n}\n' "$API_URL" > "$secret_file"
+  fi
+  ok "secret.json written: ai_search.api_base_url = $API_URL"
+}
+
+configure_secret() {
+  if [[ "$MODE" == "install" ]]; then
+    prompt_api_url
+    write_secret_json
+  elif [[ "$MODE" == "upgrade" ]]; then
+    if [[ -n "$API_URL" ]]; then
+      write_secret_json
+    elif [[ ! -f "$TARGET/secret.json" ]]; then
+      warn "secret.json not found at $TARGET/secret.json. Pass --api-url to create it."
+    fi
+  fi
+}
+
 # ---------- Modes ----------
 read_installed_version() {
   if [[ -f "$MODULE_DIR/VERSION" ]]; then
@@ -274,6 +312,7 @@ do_install() {
   resolve_version
   download_and_extract
   install_files
+  configure_secret
   activate_module
   ok "Install complete: $MODULE_NAME@$VERSION"
 }
@@ -290,6 +329,7 @@ do_upgrade() {
   download_and_extract
   FORCE=1
   install_files
+  configure_secret
   activate_module
   ok "Upgrade complete: $MODULE_NAME@$VERSION"
 }
